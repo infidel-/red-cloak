@@ -52,20 +52,29 @@ class Console
           if (tokens.length == 0)
             {
               var s = 'Commonly available commands: ' +
-                'again (g), clues, skills/stats, topics/topic, who\n';
+                'again (g), clues, skills/stats, topic/topics, who\n';
               if (game.state == STATE_LOCATION)
                 s += 'Location commands: ' +
                   'enter, examine (x), exit, go, ' +
                   'look (l), roll (r), talk (t), use (u)';
               else if (game.state == STATE_CHAT)
-                s += 'chat, evaluate (eval), ' +
-                'examine (x), exit, ' +
-                'look (l), probe (p), roll (r), topic, use (u)';
+                s += 'Conversation commands: ' +
+                  'chat (c), discuss (d), evaluate (e), ' +
+                  'examine (x), exit, ' +
+                  'look (l), probe (p), roll (r), use (u)';
               system(s);
             }
           else
             {
               var text = commandHelp[tokens[0]];
+              if (text == null)
+                {
+                  if (game.state == STATE_LOCATION)
+                    text = Location.commandHelp[tokens[0]];
+                  else if (game.state == STATE_CHAT)
+                    text = NPC.commandHelp[tokens[0]];
+
+                }
               if (text != null)
                 system(text);
               else system('There is no such command or no help available.');
@@ -118,29 +127,15 @@ class Console
           // list known topics
           if (tokens.length < 1)
             {
-              var s = new StringBuf();
-              s.add('Known topics: ');
-              for (ch in game.adventure.info.topics)
-                if (ch.isKnown)
-                  s.add(ch.name + ', ');
-              var msg = s.toString();
-              msg = msg.substr(0, msg.length - 2);
-              print(msg);
+              game.adventure.printKnownTopics();
               return 1;
             }
 
           // check if topic is known
-          var name = tokens[0];
-          var topic = null;
-          for (t in game.adventure.info.topics)
-            if (t.isKnown && Lambda.has(t.names, name))
-              {
-                topic = t;
-                break;
-              }
+          var topic = game.adventure.getKnownTopic(tokens[0]);
           if (topic == null)
             {
-              system('I have no idea who that is.');
+              system('I have no idea who or what that is.');
               return 1;
             }
           print(topic.note);

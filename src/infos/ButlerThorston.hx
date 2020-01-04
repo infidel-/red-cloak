@@ -1,6 +1,6 @@
 package infos;
 
-// butler at Thorston's house'
+// butler at Thorston's house
 
 class ButlerThorston extends NPC
 {
@@ -36,6 +36,7 @@ class ButlerThorston extends NPC
           }
         },
       ];
+      chatTopicUnknown = 'The butler looks at you politely feigning interest.';
       chatTopics = [
         {
           id: 'redCloak',

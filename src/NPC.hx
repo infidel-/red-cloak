@@ -15,6 +15,7 @@ class NPC
   // chat-related data
   var chatSkills: Array<ChatSkill>;
   var chatTopics: Array<ChatTopic>;
+  var chatTopicUnknown: String;
   var hints: Array<ChatHint>;
 
   public function new(g: Game, s: Scene)
@@ -25,6 +26,7 @@ class NPC
       name = '?';
       chatSkills = null;
       chatTopics = null;
+      chatTopicUnknown = null;
       hints = null;
     }
 
@@ -55,7 +57,7 @@ class NPC
       game.state = STATE_CHAT;
       game.npc = this;
       evalTimer = 0;
-      print('You have started a conversation.');
+      print('You have started a conversation with ' + name + '.');
       if (hints == null) // only init on the first attempt
         initHints();
       printState();
@@ -69,26 +71,9 @@ class NPC
     {
       // help
       var ret = 0;
-      if (cmd == 'help' || cmd == 'h' || cmd == '?')
-        {
-          if (tokens.length == 0)
-            print('Commonly available commands in chat: ' +
-              'again (g), chat (c), clues, evaluate (e), ' +
-              'examine (x), exit, ' +
-              'look (l), probe (p), roll (r), ' +
-              'topic, topics, use (u), who');
-          else
-            {
-              var text = commandHelp[tokens[0]];
-              if (text != null)
-                print(text);
-              else print('There is no such command or no help available.');
-            }
-          return -1;
-        }
 
       // chat (roll fast-talk, gain hints, raise disposition)
-      else if (cmd == 'chat' || cmd == 'c')
+      if (cmd == 'chat' || cmd == 'c')
         {
           var res = game.player.roll('charisma');
           if (res == ROLL_SUCCESS || res == ROLL_CRIT)
@@ -110,6 +95,45 @@ class NPC
               ];
               print(rnd[Std.random(rnd.length)]);
             }
+          ret = 1;
+        }
+
+      // discuss
+      else if (cmd == 'discuss' || cmd == 'd')
+        {
+          // list known topics
+          if (tokens.length < 1)
+            {
+              game.adventure.printKnownTopics();
+              return 1;
+            }
+
+          // check if topic is known
+          var topic = game.adventure.getKnownTopic(tokens[0]);
+          if (topic == null)
+            {
+              game.console.system('I have no idea who or what that is.');
+              return 1;
+            }
+          var chatTopic = null;
+          for (t in chatTopics)
+            if (t.id == topic.id)
+              {
+                chatTopic = t;
+                break;
+              }
+          if (chatTopic == null)
+            {
+              if (chatTopicUnknown != null)
+                print(chatTopicUnknown);
+              else print('You spend some time discussing ' + topic.name +
+                'with ' + name + '. It does not appear that they\'re interested.');
+              return 1;
+            }
+
+          // handle topic
+          handleTopic(topic, chatTopic);
+
           ret = 1;
         }
 
@@ -252,6 +276,13 @@ class NPC
         }
 
       return ret;
+    }
+
+
+// handle conversation topic discussion
+  function handleTopic(topic, chatTopic: ChatTopic)
+    {
+
     }
 
 
@@ -451,10 +482,17 @@ class NPC
     }
 
 
-  static var commandHelp = [
+  public static var commandHelp = [
     'again' => 'again, g - Repeats previous command again.',
+    'chat' => 'chat, c - (Roll Charisma) Make small talk to the character. Raises character disposition and gives some hints.',
+    'discuss' => 'discuss, d <topic> - Discuss this topic in conversation.',
+    'evaluate' => 'evaluate, eval, e - (Roll Psychology) Assess the emotional state of the character. Shows detailed information for the next three turns.',
     'examine' => 'examine, x, look, l - (Roll Spot Hidden) Examines the NPC and surroundings, giving some hints.',
     'look' => 'examine, x, look, l - (Roll Spot Hidden) Examines the NPC and surroundings, giving some hints.',
+    'probe' => 'probe, p - (Roll Fast Talk) Converse about some general topics in-depth with the character. Raises character interest and gives some hints.',
+    'roll' => 'roll, r <skill> - Makes a roll for a given skill.',
+    'topic' => 'topics, topic <topic> - Prints information about a known conversation topic. If the name is not given, lists known topics.',
+    'topics' => 'topics, topic <topic> - Prints information about a known conversation topic. If the name is not given, lists known topics.',
     'who' => 'who <name> - Prints information about a non-player character.',
   ];
 }

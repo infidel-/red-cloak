@@ -78,4 +78,9 @@
       else game.console.error('No result handler for ' + result);
       return 1;
     }
+
+  public static var commandHelp = [
+    'examine' => 'examine, x, look, l <object> - Examines the given object. If no object is given, describes the scene.',
+    'look' => 'examine, x, look, l <object> - Examines the given object. If no object is given, describes the scene.',
+  ];
 }

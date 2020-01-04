@@ -59,6 +59,7 @@ class AdventureInfo
           names: [
             'cloak',
             'red',
+            'murders',
             'murderer',
           ],
           note: "Red Cloak is the name the press gave to the mysterious murderer that has recently started terrorizing the inhabitants of Metro city.",
