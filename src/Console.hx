@@ -21,12 +21,17 @@ class Console
       // split command into tokens
       var tmp = str.split(' ');
       var tokens = [];
+      var tokensFull = [];
       for (x in tmp)
-        if (!Lambda.has(Const.ignoredKeywords, x))
-          tokens.push(x.toLowerCase());
+        {
+          if (!Lambda.has(Const.ignoredKeywords, x))
+            tokens.push(x.toLowerCase());
+          tokensFull.push(x.toLowerCase());
+        }
 //      trace(tokens);
 
       var cmd = tokens.shift();
+      tokensFull.shift();
 
       // try common commands first
       var ret = runCommandCommon(cmd, tokens);
@@ -37,7 +42,7 @@ class Console
       if (game.state == STATE_LOCATION)
         return runCommandLocation(cmd, tokens);
       else if (game.state == STATE_CHAT)
-        return game.npc.runCommand(cmd, tokens);
+        return game.npc.runCommand(cmd, tokens, tokensFull);
 
       return 0;
     }
@@ -222,14 +227,24 @@ class Console
       if (tokens.length == 0)
         {
           system('Debug commands:\n' +
+            'eval (e) - toggle always on evaluate timer\n' +
             'skill [id/name] [val] - set skill value'
           );
           return 1;
         }
       var cmd = tokens[0];
 
+      // evaluate timer
+      if (cmd == 'eval' || cmd == 'e')
+        {
+          game.debug.evaluate = !game.debug.evaluate;
+          system('[Evaluate always on: ' + game.debug.evaluate + ']');
+
+          return 1;
+        }
+
       // debug skill <id/name> <val> - set skill value
-      if (cmd == 'skill')
+      else if (cmd == 'skill')
         {
           var id = tokens[1];
           var val = Std.parseInt(tokens[2]);

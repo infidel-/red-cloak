@@ -12,6 +12,7 @@ class ButlerThorston extends NPC
 
       id = 'butlerThorston';
       name = 'the butler';
+      nameUpper = 'The butler';
       tries = 3;
       chatSkills = [
         {
@@ -28,6 +29,7 @@ class ButlerThorston extends NPC
             type: RESULT_CHAT_FINISH_SUCCESS,
           }
         },
+/*
         {
           id: 'persuade',
           say: 'Oh, you\'re a friend of mister Thorston? Please, do come in!',
@@ -35,34 +37,50 @@ class ButlerThorston extends NPC
             type: RESULT_CHAT_FINISH_SUCCESS,
           }
         },
+*/
       ];
       chatTopicUnknown = 'The butler looks at you politely feigning interest.';
-      chatTopics = [
+      chatTopicNotInterested = 'The butler is not interested in that topic.';
+      chatCommonTopics = [
+        'politics' => {
+          id: 'politics',
+          points: 3,
+          maxPoints: 3,
+          isFavorite: true,
+        },
+        'science' => {
+          id: 'science',
+          points: 3,
+          maxPoints: 3,
+          isFavorite: false,
+        },
+      ];
+/*
+      chatSpecialTopics = [
         {
           id: 'redCloak',
           stages: [
             {
               say: 'Outrageous! The police should immediately find the murderer!',
               result: {
-                type: RESULT_CHAT_INTEREST,
+                type: RESULT_CHAT_rapport,
                 value: 20
               }
             },
             {
               say: 'What are we paying the taxes for?!',
               result: {
-                type: RESULT_CHAT_INTEREST,
+                type: RESULT_CHAT_rapport,
                 value: 20
               }
             },
           ]
         },
-/*
         {
           id: 'thorston',
           func: function()
             {
-              if (disposition < 75)
+              if (anxiety < 75)
                 {
                   handleTopic({
                     id: 'thorston',
@@ -85,8 +103,8 @@ class ButlerThorston extends NPC
                 }
             }
         },
-*/
       ];
+*/
     }
 
 
@@ -102,8 +120,8 @@ class ButlerThorston extends NPC
 
       say('What is your business here?');
       tries--;
-      disposition = 50;
-      interest = 30;
+      anxiety = 10;
+      rapport = 0;
       return true;
     }
 
@@ -111,8 +129,8 @@ class ButlerThorston extends NPC
 // turn callback
   override function turnPre()
     {
-      print('The butler is gradually losing patience.');
-      interest -= 5;
+//      print('The butler is gradually losing patience.');
+//      rapport -= 5;
     }
 
 

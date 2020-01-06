@@ -32,6 +32,14 @@ p {
   color: #ee3333;
 }
 
+.topicLoves {
+  color: #33aa33;
+}
+
+.topicHates {
+  color: #aa3333;
+}
+
 .consoleDebug {
   font-family: monospace,monospace;
   font-size: 70%;

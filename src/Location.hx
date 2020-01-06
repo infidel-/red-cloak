@@ -23,9 +23,12 @@
 
 
 // runs a console command on this location
+// 0 - error, show standard error message
+// 1 - success
+// -1 - error, skip standard error message
   public function runCommand(cmd: String, tokens: Array<String>): Int
     {
-      // we at least need 2 tokens: command and object
+      // we need at least 2 tokens: command and object
       if (tokens.length < 1)
         return 0;
 

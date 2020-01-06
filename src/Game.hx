@@ -5,6 +5,9 @@ class Game
   public var scene: Scene;
   public var npc: NPC;
   public var player: Player;
+  public var debug: {
+    var evaluate: Bool;
+  }
   public var state(get, set): _GameState;
   var _state: _GameState;
 
@@ -12,6 +15,9 @@ class Game
     {
       _state = STATE_MAP;
       npc = null;
+      debug = {
+        evaluate: false,
+      };
       player = new Player(this, {
         str: Const.dice(3,6),
         con: Const.dice(3,6),
@@ -28,6 +34,7 @@ class Game
       // temp character
       player.skills['psychology'].val += (3 + Std.random(3)) * 10;
       player.skills['fastTalk'].val += 40;
+      player.skills['persuade'].val += 30;
 
       // temp start
       console.print('### Welcome to CthulhuRPG DEMO.');
@@ -36,6 +43,10 @@ class Game
       scene = new infos.ThorstonHouse(this);
       console.runCommand('stats');
       scene.enter();
+
+      // DEBUG: auto commands
+      console.runCommand('dbg e');
+      console.runCommand('ring bell');
     }
 
 
