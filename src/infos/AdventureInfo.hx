@@ -12,13 +12,7 @@ class AdventureInfo
     var note: String;
     var isKnown: Bool;
   }>;
-  public var topics: Array<{
-    var id: String;
-    var name: String;
-    var names: Array<String>;
-    var note: String;
-    var isKnown: Bool;
-  }>;
+  public var topics: Array<_ChatSpecialTopicInfo>;
 
   public function new(g: Game)
     {
@@ -69,3 +63,11 @@ class AdventureInfo
       ];
     }
 }
+
+typedef _ChatSpecialTopicInfo = {
+  var id: String;
+  var name: String;
+  var names: Array<String>;
+  var note: String;
+  var isKnown: Bool;
+};

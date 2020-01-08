@@ -1,11 +1,6 @@
 class ChatConst
 {
-  public static var commonTopics: Map<String, {
-    var id: String;
-    var name: String;
-    var nameLower: String;
-    var names: Array<String>;
-  }> = [
+  public static var commonTopics: Map<String, _ChatCommonTopicInfo> = [
     'politics' => {
       id: 'politics',
       name: 'Politics',
@@ -86,7 +81,7 @@ class ChatConst
 
 
 // get common topic info
-  public static function getCommonTopic(name: String)
+  public static function getCommonTopic(name: String): _ChatCommonTopicInfo
     {
       var topic = null;
       for (t in commonTopics)
@@ -95,4 +90,12 @@ class ChatConst
 
       return null;
     }
+}
+
+
+typedef _ChatCommonTopicInfo = {
+  var id: String;
+  var name: String;
+  var nameLower: String;
+  var names: Array<String>;
 }

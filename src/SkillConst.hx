@@ -167,6 +167,20 @@ Track 10%
           return info;
       return null;
     }
+
+
+// prints skills
+  public static function printSkills(game: Game)
+    {
+      var sb = new StringBuf();
+      sb.add('Skills: ');
+      for (skill in game.player.skills)
+        sb.add(skill.info.name + ' (' + skill.val + '%), ');
+      var s = sb.toString();
+      s = s.substr(0, s.length - 2);
+      s += '</span>';
+      game.console.print(s);
+    }
 }
 
 typedef _SkillInfo = {

@@ -227,15 +227,32 @@ class Console
       if (tokens.length == 0)
         {
           system('Debug commands:\n' +
+            'anxiety (a) - set anxiety in chat\n' +
             'eval (e) - toggle always on evaluate timer\n' +
-            'skill [id/name] [val] - set skill value'
+            'rapport (r) - set rapport in chat\n' +
+            'skill (sk) [id/name] [val] - set skill value'
           );
           return 1;
         }
       var cmd = tokens[0];
 
+      // set chat anxiety
+      if (cmd == 'anxiety' || cmd == 'a')
+        {
+          if (game.state != STATE_CHAT)
+            {
+              system('Not in chat.');
+              return 1;
+            }
+          var val = Std.parseInt(tokens[1]);
+          system('[Anxiety ' + val + ']');
+          game.npc.anxiety = val;
+
+          return 1;
+        }
+
       // evaluate timer
-      if (cmd == 'eval' || cmd == 'e')
+      else if (cmd == 'eval' || cmd == 'e')
         {
           game.debug.evaluate = !game.debug.evaluate;
           system('[Evaluate always on: ' + game.debug.evaluate + ']');
@@ -243,8 +260,23 @@ class Console
           return 1;
         }
 
+      // set chat rapport
+      else if (cmd == 'rapport' || cmd == 'r')
+        {
+          if (game.state != STATE_CHAT)
+            {
+              system('Not in chat.');
+              return 1;
+            }
+          var val = Std.parseInt(tokens[1]);
+          system('[Rapport ' + val + ']');
+          game.npc.rapport = val;
+
+          return 1;
+        }
+
       // debug skill <id/name> <val> - set skill value
-      else if (cmd == 'skill')
+      else if (cmd == 'skill' || cmd == 'sk')
         {
           var id = tokens[1];
           var val = Std.parseInt(tokens[2]);

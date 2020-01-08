@@ -18,7 +18,7 @@ class Adventure
   public function printKnownTopics()
     {
       var s = new StringBuf();
-      s.add('Known topics: ');
+      s.add('Known special topics: ');
       for (ch in game.adventure.info.topics)
         if (ch.isKnown)
           s.add(ch.name + ', ');
@@ -29,11 +29,23 @@ class Adventure
 
 
 // get known topic info
-  public function getKnownTopic(name: String)
+  public function getKnownTopic(name: String): _ChatSpecialTopicInfo
     {
       var topic = null;
       for (t in game.adventure.info.topics)
         if (t.isKnown && Lambda.has(t.names, name))
+          return t;
+
+      return null;
+    }
+
+
+// get topic info by id
+  public function getByID(id: String): _ChatSpecialTopicInfo
+    {
+      var topic = null;
+      for (t in game.adventure.info.topics)
+        if (t.id == id)
           return t;
 
       return null;

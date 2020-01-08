@@ -1,5 +1,8 @@
 // NPC state and info
 
+import ChatConst;
+import infos.AdventureInfo;
+
 class NPC
 {
   var game: Game;
@@ -9,6 +12,7 @@ class NPC
   public var id: String;
   public var name: String;
   public var nameUpper: String;
+  var effects: Array<Effect>;
   public var anxiety(get, set): Int;
   var _anxiety: Int;
   public var rapport(get, set): Int;
@@ -20,11 +24,12 @@ class NPC
   var chatStateTimer: Int;
 
   // chat-related data
+  var isExamined: Bool;
   var gender: Bool; // false - male, true - female
   var pronoun: String;
-  var chatSkills: Array<ChatSkill>;
+  var chatSkills: Map<String, ChatSkill>;
   var chatCommonTopics: Map<String, ChatCommonTopic>;
-//  var chatTopics: Array<ChatTopic>;
+  var chatSpecialTopics: Map<String, ChatSpecialTopic>;
   var chatTopicUnknown: String;
   var chatTopicNotInterested: String;
   var hints: Array<ChatHint>;
@@ -38,17 +43,19 @@ class NPC
       id = '?';
       name = '?';
       nameUpper = '?';
+      effects = [];
       _anxiety = 0;
       _rapport = 0;
       chatMode = CHAT_MODE_CAUTIOUS;
       _chatState = NPC_STATE_NORMAL;
       chatStateTimer = 0;
-      chatSkills = null;
-      chatCommonTopics = null;
-//      chatTopics = null;
+      chatSkills = new Map();
+      chatCommonTopics = new Map();
+      chatSpecialTopics = new Map();
       chatTopicUnknown = null;
       chatTopicNotInterested = null;
       hints = null;
+      isExamined = false;
     }
 
 
@@ -81,6 +88,9 @@ class NPC
       game.state = STATE_CHAT;
       game.npc = this;
       evalTimer = 0;
+      // DEBUG: evaluate timer always on
+      if (game.debug.evaluate)
+        evalTimer = 1;
       chatStateTimer = 0;
       _chatState = NPC_STATE_NORMAL;
       print('You have started a conversation with ' + name + '.');
@@ -118,29 +128,24 @@ class NPC
               return 1;
             }
 
-          // find topic record
+          // find common or special topic
           var topic = ChatConst.getCommonTopic(tokens[0]);
-          if (topic == null)
+          if (topic != null)
+            ret = discussCommonCommand(topic);
+          else
             {
-              game.console.system('I have no idea who or what that is.');
-              return 1;
-            }
-          var chatTopic = chatCommonTopics[topic.id];
-          if (chatTopic == null)
-            {
-              if (chatTopicNotInterested != null)
-                print(chatTopicNotInterested);
-              else print('You spend some time discussing ' + topic.name +
-                'with ' + name + '. It does not appear that ' + pronoun +
-                ' is interested.');
-              ret = 1;
-            }
+              var info = game.adventure.getKnownTopic(tokens[0]);
+              if (info == null)
+                {
+                  game.console.system('I have no idea who or what that is.');
+                  return 1;
+                }
 
-          // handle topic
-          else ret = discussCommonTopic(chatTopic, topic);
+              ret = discussSpecialCommand(info);
+            }
         }
 
-      // evaluate (roll psychology and show correct convo state)
+      // evaluate (roll psychology and show full convo state)
       else if (cmd == 'evaluate' || cmd == 'eval' || cmd == 'e')
         {
           var res = game.player.roll('psychology');
@@ -165,6 +170,27 @@ class NPC
           ret = 1;
         }
 
+      // examine (roll spot hidden and give hints)
+      else if (Lambda.has([ 'look', 'l', 'examine', 'x' ], cmd))
+        {
+          if (isExamined)
+            {
+              print('You have already examined ' + name + '.');
+              return 1;
+            }
+
+          var res = game.player.roll('spotHidden');
+          if (res == ROLL_SUCCESS || res == ROLL_CRIT)
+            {
+              isExamined = true;
+              print('You furtively examine ' + name + ' looking for clues on conversation topics.');
+            }
+          else print('You have failed to discover much about conversation topics with the ' + name + '.');
+
+          gainHints(res);
+          ret = 1;
+        }
+
       // mode (switch convo mode)
       else if (cmd == 'mode' || cmd == 'm')
         {
@@ -176,28 +202,22 @@ class NPC
             }
 
           // change mode and print it
-          var modeStr = '';
           if (tokensFull[0] == 'cautious' || tokensFull[0] == 'c')
-            {
-              chatMode = CHAT_MODE_CAUTIOUS;
-              modeStr = 'Cautious';
-            }
+            chatMode = CHAT_MODE_CAUTIOUS;
           else if (tokensFull[0] == 'intimate' || tokensFull[0] == 'i')
-            {
-              chatMode = CHAT_MODE_INTIMATE;
-              modeStr = 'Intimate';
-            }
+            chatMode = CHAT_MODE_INTIMATE;
           else if (tokensFull[0] == 'aggressive' || tokensFull[0] == 'a')
-            {
-              chatMode = CHAT_MODE_AGGRESSIVE;
-              modeStr = 'Aggressive';
-            }
+            chatMode = CHAT_MODE_AGGRESSIVE;
           else
             {
               print('No such mode.');
               return 1;
             }
-          print('Mode: ' + modeStr);
+
+          // print current mode
+          var s = new StringBuf();
+          printModeString(s);
+          print(s.toString());
 
           return 1;
         }
@@ -213,57 +233,26 @@ class NPC
             }
 
           // find topic record
-          var topic = ChatConst.getCommonTopic(tokens[0]);
-          if (topic == null)
+          var info = ChatConst.getCommonTopic(tokens[0]);
+          if (info == null)
             {
               game.console.system('I have no idea what that is.');
+              ChatConst.printCommonTopics(game);
               return 1;
             }
-          var chatTopic = chatCommonTopics[topic.id];
-          if (chatTopic == null)
-            {
-              if (chatTopicUnknown != null)
-                print(chatTopicUnknown);
-              else print('You spend some time probing ' + name +
-                ' on ' + topic.nameLower +
-                ' topic. It does not appear that they\'re interested.');
-              return 1;
-            }
-
-          // check if already known
-          var hint = getHint(HINT_TOPIC, topic.id);
-
-          // roll skill
-          var res = game.player.roll('fastTalk');
-          var s = new StringBuf();
-          s.add('You probe ' + name + ' on the topic of ' +
-            topic.nameLower + '.');
-          if (hint.stage < 4)
-            {
-              s.add(' It appears that ' + pronoun +
-                (chatTopic.isFavorite ? ' loves' : ' hates') +
-                ' talking about it.');
-
-              // uncover topic
-              hint.stage = 4;
-              hint.text = hint.fullText;
-            }
-          print(s.toString());
-          gainHints(res);
-
-          ret = 1;
-        }
-
-      // examine surroundings
-      else if (Lambda.has([ 'look', 'l', 'examine', 'x' ], cmd))
-        {
-          print("TODO");
-          ret = 1;
+          ret = probeCommand(info);
         }
 
       // roll a skill
       else if (cmd == 'roll' || cmd == 'r')
         {
+          // list skills
+          if (tokens.length < 1)
+            {
+              SkillConst.printSkills(game);
+              return 1;
+            }
+
           // find skill by name
           var skill = SkillConst.getByName(tokens[0]);
           if (skill == null)
@@ -279,14 +268,8 @@ class NPC
             }
 
           // check if this skill is available in this chat
-          var chatSkill = null;
-          for (ch in chatSkills)
-            if (ch.id == skill.id)
-              {
-                chatSkill = ch;
-                break;
-              }
-          if (chatSkill == null)
+          var chatSkill = chatSkills[skill.id];
+          if (chatSkill == null || !chatSkill.isEnabled)
             {
               print('This skill is useless here.');
               ret = 1;
@@ -312,7 +295,10 @@ class NPC
                         updateHintText(hint);
                         break;
                       }
+                  if (chatSkill.sayFail != null)
+                    say(chatSkill.sayFail);
                 }
+              disableSkill(chatSkill.id);
               ret = 1;
             }
         }
@@ -328,10 +314,23 @@ class NPC
           turnPre();
 
           // check for finish
-          if (anxiety > 100)
+          if (anxiety >= 100)
             {
               finishChat(false);
               return 1;
+            }
+
+          // effect timers
+          for (e in effects)
+            {
+              e.timer--;
+              if (e.timer == 0)
+                {
+                  effects.remove(e);
+                  e.finish();
+                  if (game.state != STATE_CHAT)
+                    return 1;
+                }
             }
 
           if (evalTimer > 0)
@@ -363,17 +362,21 @@ class NPC
   function chatCommand(): Int
     {
       var res = game.player.roll('charisma');
+      var s = new StringBuf();
       var rnd = [
         'You make small talk with ' + name + '.',
         'You converse with ' + name + '.',
         'You chat with ' + name + ' about trivialities.',
       ];
-      print(rnd[Std.random(rnd.length)]);
+      s.add(rnd[Std.random(rnd.length)]);
       gainHints(res);
 
       // restore topic points on success
       if (res != ROLL_SUCCESS && res != ROLL_CRIT)
-        return 1;
+        {
+          print(s.toString());
+          return 1;
+        }
 
       // pick favorite or not
       var isFavorite = false;
@@ -390,7 +393,10 @@ class NPC
         if (t.isFavorite == isFavorite && t.points < t.maxPoints)
           tmp.push(t);
       if (tmp.length == 0)
-        return 1;
+        {
+          print(s.toString());
+          return 1;
+        }
 
       var topic = tmp[Std.random(tmp.length)];
       var points = (res == ROLL_SUCCESS ? 1 : 3);
@@ -399,34 +405,47 @@ class NPC
 
       topic.points += points;
       var info = ChatConst.getCommonTopic(topic.id);
-      print('[+' + points + ' ' + info.name + ' points]');
+      s.add(' [+' + points + ' ' + info.name + ']');
+      print(s.toString());
 
       return 1;
     }
 
 
 // handle common topic discussion
-  function discussCommonTopic(chatTopic: ChatCommonTopic, topic): Int
+  function discussCommonCommand(info: _ChatCommonTopicInfo): Int
     {
+      // neutral topic
+      var chatTopic = chatCommonTopics[info.id];
+      if (chatTopic == null)
+        {
+          if (chatTopicNotInterested != null)
+            print(chatTopicNotInterested);
+          else print('You spend some time discussing ' + info.name +
+            'with ' + name + '. It does not appear that ' + pronoun +
+            ' is interested.');
+          return 1;
+        }
+
       // check and decrease topic points
       if (chatTopic.points <= 0)
         {
-          print('That topic is currently exhausted.');
+          print('This topic is currently exhausted.');
           return -1;
         }
       chatTopic.points--;
 
-      // uncover chatTopic
+      // uncover topic
       var s = new StringBuf();
       s.add('You ');
       if (chatMode == CHAT_MODE_CAUTIOUS)
-        s.add('discreetly converse about **' + topic.nameLower + '** with ' +
+        s.add('discreetly converse about **' + info.nameLower + '** with ' +
           name);
       else if (chatMode == CHAT_MODE_INTIMATE)
-        s.add('intimately discuss **' + topic.nameLower + '** with ' + name);
+        s.add('intimately discuss **' + info.nameLower + '** with ' + name);
       else if (chatMode == CHAT_MODE_AGGRESSIVE)
         s.add('aggressively confront ' + name + ' about **' +
-          topic.nameLower + '**');
+          info.nameLower + '**');
 
       // roll skill according to state
       var skillID = null;
@@ -462,7 +481,7 @@ class NPC
           coef = 1.5;
         }
 
-      var hint = getHint(HINT_TOPIC, topic.id);
+      var hint = getHint(HINT_COMMON_TOPIC, info.id);
       if (hint.stage < 4)
         {
           hint.stage = 4;
@@ -674,6 +693,82 @@ class NPC
     }
 
 
+// handle special topic discussion
+  function discussSpecialCommand(info: _ChatSpecialTopicInfo): Int
+    {
+      var topic = chatSpecialTopics[info.id];
+      if (!topic.isEnabled)
+        {
+          print(nameUpper + ' is not interested in this topic.');
+          return -1;
+        }
+
+      // fully open
+      var hint = getHint(HINT_SPECIAL_TOPIC, info.id);
+      if (hint.stage < 4)
+        {
+          hint.stage = 4;
+          hint.text = hint.fullText;
+        }
+
+      // run function
+      if (topic.func != null)
+        topic.func();
+
+      return 1;
+    }
+
+
+// command: probe common topic
+  function probeCommand(info: _ChatCommonTopicInfo): Int
+    {
+      var topic = chatCommonTopics[info.id];
+      if (topic == null)
+        {
+          if (chatTopicUnknown != null)
+            print(chatTopicUnknown);
+          else print('You spend some time probing ' + name +
+            ' on ' + info.nameLower +
+            ' topic. It does not appear that they\'re interested.');
+          return 1;
+        }
+
+      // check if already known
+      var hint = getHint(HINT_COMMON_TOPIC, info.id);
+
+      // roll skill
+      var res = game.player.roll('fastTalk');
+      var s = new StringBuf();
+      s.add('You probe ' + name + ' on the topic of ' +
+        info.nameLower + '.');
+      if (hint.stage < 4)
+        {
+          s.add(' It appears that ' + pronoun +
+            (topic.isFavorite ? ' loves' : ' hates') +
+            ' talking about it.');
+
+          // uncover topic
+          hint.stage = 4;
+          hint.text = hint.fullText;
+        }
+
+      // restore points on success
+      if (topic.points < topic.maxPoints &&
+          (res == ROLL_SUCCESS || res == ROLL_CRIT))
+        {
+          var points = (res == ROLL_SUCCESS ? 1 : 3);
+          if (topic.points + points > topic.maxPoints)
+            points = topic.maxPoints - topic.points;
+          topic.points += points;
+          s.add(' [+' + points + ' ' + info.name + ']');
+        }
+      print(s.toString());
+      gainHints(res);
+
+      return 1;
+    }
+
+
 // initialize hints state
   function initHints()
     {
@@ -682,13 +777,29 @@ class NPC
       // add common topics
       for (topic in chatCommonTopics)
         hints.push({
-          type: HINT_TOPIC,
+          type: HINT_COMMON_TOPIC,
           text: '',
           id: topic.id,
           knownLetters: [],
           fullText: ChatConst.getCommonTopic(topic.id).name,
           stage: 0,
         });
+
+      // add known special topics
+      for (topic in chatSpecialTopics)
+        {
+          var info = game.adventure.getByID(topic.id);
+          if (!info.isKnown)
+            continue;
+          hints.push({
+            type: HINT_SPECIAL_TOPIC,
+            text: '',
+            id: topic.id,
+            knownLetters: [],
+            fullText: info.name,
+            stage: 0,
+          });
+        }
 
       // add skills
       for (skill in chatSkills)
@@ -825,23 +936,66 @@ class NPC
         ss.add(' [' + chatStateTimer + ' turns left]');
       ss.add('\n');
       if (evalTimer > 0)
-        ss.add('[Anxiety: ' + anxiety + '/100, ' +
-          'Rapport: ' + rapport + '/100]\n');
+        {
+          for (e in effects)
+            e.print(ss, e);
+          ss.add('[Anxiety: ' + anxiety + '/100, ' +
+            'Rapport: ' + rapport + '/100]\n');
+        }
 
-      ss.add('Mode: ');
-      if (chatMode == CHAT_MODE_CAUTIOUS)
-        ss.add('Cautious');
-      else if (chatMode == CHAT_MODE_INTIMATE)
-        ss.add('Intimate');
-      else if (chatMode == CHAT_MODE_AGGRESSIVE)
-        ss.add('Aggressive');
-      ss.add('\n');
+      // print current mode
+      printModeString(ss);
 
       // print hints
       var hintstr = printHints();
       if (hintstr.length > 0)
         ss.add('Hints: ' + hintstr);
+
       print(ss.toString());
+    }
+
+
+// print current mode
+  function printModeString(s: StringBuf)
+    {
+      s.add('Mode: ');
+      if (chatMode == CHAT_MODE_CAUTIOUS)
+        {
+          s.add('Cautious ');
+          if (chatState == NPC_STATE_NORMAL)
+            s.add('[L: R+, H: A-]');
+          else if (chatState == NPC_STATE_CONFUSION)
+            s.add('[L: R-, H: A+]');
+          else if (chatState == NPC_STATE_ENMITY)
+            s.add('[L: R- %Conf, H: A+ %Conf]');
+          else if (chatState == NPC_STATE_AGREEMENT)
+            s.add('[L: R+ %Conf, H: A- %Conf]');
+        }
+      else if (chatMode == CHAT_MODE_INTIMATE)
+        {
+          s.add('Intimate ');
+          if (chatState == NPC_STATE_NORMAL)
+            s.add('[L: R+ A-, H: R- A+]');
+          else if (chatState == NPC_STATE_CONFUSION)
+            s.add('[L: %%Agree %Enmity, H: R+ A-]');
+          else if (chatState == NPC_STATE_ENMITY)
+            s.add('[L: R-- %Conf, H: A++ %Conf]');
+          else if (chatState == NPC_STATE_AGREEMENT)
+            s.add('[L: R++ %Conf, H: A-- %Conf]');
+        }
+      else if (chatMode == CHAT_MODE_AGGRESSIVE)
+        {
+          s.add('Aggressive ');
+          if (chatState == NPC_STATE_NORMAL)
+            s.add('[L: A+ %%Conf %Agree, H: A+ %%Conf %Enmity]');
+          else if (chatState == NPC_STATE_CONFUSION)
+            s.add('[L: A+ %%Enmity %Agree, H: A+ %%Enmity %Agree]');
+          else if (chatState == NPC_STATE_ENMITY)
+            s.add('[L: R---, H: A+++]');
+          else if (chatState == NPC_STATE_AGREEMENT)
+            s.add('[L: R+++ %Conf, H: A--- %Conf %Enmity]');
+        }
+      s.add('\n');
     }
 
 
@@ -853,6 +1007,13 @@ class NPC
 //      game.console.debug(hints + '');
       for (hint in hints)
         {
+          // check for disabled
+          if ((hint.type == HINT_SPECIAL_TOPIC &&
+              !chatSpecialTopics[hint.id].isEnabled) ||
+              (hint.type == HINT_SKILL &&
+              !chatSkills[hint.id].isEnabled))
+            continue;
+
           // 0: -
           if (hint.stage == 0)
             continue;
@@ -869,7 +1030,8 @@ class NPC
             {
               if (hint.type == HINT_SKILL)
                 sb.add('Skill ');
-              else if (hint.type == HINT_TOPIC)
+              else if (hint.type == HINT_COMMON_TOPIC ||
+                  hint.type == HINT_SPECIAL_TOPIC)
                 sb.add('Topic ');
               else if (hint.type == HINT_ITEM)
                 sb.add('Item ');
@@ -878,7 +1040,7 @@ class NPC
           // 2: [?e*]
           // 3: [Skill ?e*]
           // 4: [Skill Persuade]
-          if (hint.type == HINT_TOPIC && hint.stage == 4)
+          if (hint.type == HINT_COMMON_TOPIC && hint.stage == 4)
             {
               var topic = chatCommonTopics[hint.id];
               sb.add('<span class=topic' +
@@ -895,10 +1057,25 @@ class NPC
     }
 
 
-// NPC says something
-  inline function say(s: String)
+// add effect to NPC
+  inline function addEffect(e: Effect)
     {
-      game.console.print('*"' + s + '"*');
+      effects.push(e);
+    }
+
+
+// NPC says something
+  inline function say(s: String, ?pts: String)
+    {
+      game.console.print('*"' + s + '"*' +
+        (pts != null ? ' ' + pts : ''));
+    }
+
+
+// NPC says one of given strings
+  inline function sayRandom(lines: Array<String>)
+    {
+      game.console.print('*"' + lines[Std.random(lines.length)] + '"*');
     }
 
 
@@ -939,6 +1116,38 @@ class NPC
           return h;
 
       return null;
+    }
+
+
+// enable skill
+  inline function enableSkill(id: String)
+    {
+      game.console.debug('enabled ' + id);
+      chatSkills[id].isEnabled = true;
+    }
+
+
+// disable skill
+  inline function disableSkill(id: String)
+    {
+      game.console.debug('disabled ' + id);
+      chatSkills[id].isEnabled = false;
+    }
+
+
+// enable special topic
+  inline function enableSpecialTopic(id: String)
+    {
+      game.console.debug('enabled ' + id);
+      chatSpecialTopics[id].isEnabled = true;
+    }
+
+
+// disable special topic
+  inline function disableSpecialTopic(id: String)
+    {
+      game.console.debug('disabled ' + id);
+      chatSpecialTopics[id].isEnabled = false;
     }
 
 
@@ -997,10 +1206,21 @@ class NPC
 }
 
 
+typedef Effect = {
+  var id: String;
+  var timer: Int;
+  var print: StringBuf -> Effect -> Void;
+  var finish: Void -> Void;
+}
+
+
 typedef ChatSkill = {
   var id: String;
+  var isOneTime: Bool;
+  var isEnabled: Bool;
   @:optional var print: String;
   @:optional var say: String;
+  @:optional var sayFail: String;
   var result: ActionResultInfo;
 }
 
@@ -1012,8 +1232,10 @@ typedef ChatCommonTopic = {
   var isFavorite: Bool;
 }
 
-typedef ChatTopic = {
+typedef ChatSpecialTopic = {
   var id: String;
+  var isEnabled: Bool;
+/*
   var stages: Array<{
     var say: String;
     @:optional var result: ActionResultInfo;
@@ -1021,6 +1243,8 @@ typedef ChatTopic = {
   @:optional var print: String;
   @:optional var say: String;
   @:optional var result: ActionResultInfo;
+*/
+  @:optional var func: Void -> Void;
 }
 
 
@@ -1042,7 +1266,8 @@ typedef ChatHint = {
 
 enum ChatHintType {
   HINT_SKILL;
-  HINT_TOPIC;
+  HINT_COMMON_TOPIC;
+  HINT_SPECIAL_TOPIC;
   HINT_ITEM;
 }
 

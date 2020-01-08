@@ -1,5 +1,7 @@
 package infos;
 
+import NPC;
+
 // butler at Thorston's house
 
 class ButlerThorston extends NPC
@@ -15,16 +17,22 @@ class ButlerThorston extends NPC
       nameUpper = 'The butler';
       tries = 3;
       chatSkills = [
-        {
+        'credit' => {
           id: 'credit',
-          say: 'Oh, you\'re a business partner of mister Thorston? Please, do come in!',
+          isOneTime: true,
+          isEnabled: true,
+          say: 'Oh, you are a business partner of mister Thorston? Please, do come in!',
+          sayFail: 'I do not believe I have had the pleasure of meeting you before.',
           result: {
             type: RESULT_CHAT_FINISH_SUCCESS,
           }
         },
-        {
+        'law' => {
           id: 'law',
-          say: 'So, you\'re helping the police with the investigation? Please, do come in!',
+          isOneTime: true,
+          isEnabled: true,
+          say: 'So you are helping the police with the investigation? Please, do come in!',
+          sayFail: 'Let me see some credentials first.',
           result: {
             type: RESULT_CHAT_FINISH_SUCCESS,
           }
@@ -48,53 +56,49 @@ class ButlerThorston extends NPC
           maxPoints: 3,
           isFavorite: true,
         },
-        'science' => {
-          id: 'science',
+        'news' => {
+          id: 'news',
           points: 3,
           maxPoints: 3,
           isFavorite: false,
         },
       ];
-/*
+
       chatSpecialTopics = [
-        {
+       'redCloak' => {
           id: 'redCloak',
-          stages: [
-            {
-              say: 'Outrageous! The police should immediately find the murderer!',
-              result: {
-                type: RESULT_CHAT_rapport,
-                value: 20
-              }
-            },
-            {
-              say: 'What are we paying the taxes for?!',
-              result: {
-                type: RESULT_CHAT_rapport,
-                value: 20
-              }
-            },
-          ]
-        },
-        {
-          id: 'thorston',
+          isEnabled: true,
           func: function()
             {
-              if (anxiety < 75)
+              if (chatState != NPC_STATE_ENMITY)
                 {
-                  handleTopic({
-                    id: 'thorston',
-                    stages: [
-                      {
-                        say: 'Mister Thorston is not available at the moment.'
-                      },
-                      {
-                        say: 'Mister Thorston is missing and the police have been notified.'
-                      }
-                    ]
-                  });
-                  say()
+                  sayRandom([
+                    'Outrageous! The police should immediately find the murderer!',
+                    'What are we paying the taxes for?!',
+                  ]);
+                }
+              else
+                {
+                  say('Someone should do something about it!',
+                    '[+20 Rapport]');
+                  rapport += 20;
+                  disableSpecialTopic('redCloak');
+                }
+            }
+        },
 
+        'thorston' => {
+          id: 'thorston',
+          isEnabled: true,
+          func: function()
+            {
+              if (rapport < 75)
+                {
+                  sayRandom([
+                    'Mister Thorston is not available at the moment.',
+                    'Mister Thorston is missing and the police have been notified.',
+                    'I am not at liberty to discuss my employer with strangers.',
+                  ]);
                 }
               else
                 {
@@ -104,7 +108,6 @@ class ButlerThorston extends NPC
             }
         },
       ];
-*/
     }
 
 
@@ -118,10 +121,29 @@ class ButlerThorston extends NPC
           return false;
         }
 
-      say('What is your business here?');
+      if (tries > 1)
+        say('What is your business here?');
+      else say('This is the last time I am talking to you!');
       tries--;
-      anxiety = 10;
+
+      // reset state
+      anxiety = 0;
       rapport = 0;
+      enableSpecialTopic('redCloak');
+      enableSkill('law');
+      enableSkill('credit');
+      addEffect({
+        id: 'impatient',
+        timer: 10,
+        print: function (s: StringBuf, e: Effect)
+          {
+            s.add('Impatient [' + e.timer + ' turns left]\n');
+          },
+        finish: function ()
+          {
+            finishChat(false);
+          }
+      });
       return true;
     }
 
@@ -129,8 +151,6 @@ class ButlerThorston extends NPC
 // turn callback
   override function turnPre()
     {
-//      print('The butler is gradually losing patience.');
-//      rapport -= 5;
     }
 
 
