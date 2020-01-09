@@ -37,15 +37,6 @@ class ButlerThorston extends NPC
             type: RESULT_CHAT_FINISH_SUCCESS,
           }
         },
-/*
-        {
-          id: 'persuade',
-          say: 'Oh, you\'re a friend of mister Thorston? Please, do come in!',
-          result: {
-            type: RESULT_CHAT_FINISH_SUCCESS,
-          }
-        },
-*/
       ];
       chatTopicUnknown = 'The butler looks at you politely feigning interest.';
       chatTopicNotInterested = 'The butler is not interested in that topic.';
@@ -80,7 +71,7 @@ class ButlerThorston extends NPC
               else
                 {
                   say('Someone should do something about it!',
-                    '[+20 Rapport]');
+                    '+20 Rapport');
                   rapport += 20;
                   disableSpecialTopic('redCloak');
                 }
@@ -137,7 +128,7 @@ class ButlerThorston extends NPC
         timer: 10,
         print: function (s: StringBuf, e: Effect)
           {
-            s.add('Impatient [' + e.timer + ' turns left]\n');
+            s.add('Impatient ' + sys(e.timer + ' turns left'));
           },
         finish: function ()
           {

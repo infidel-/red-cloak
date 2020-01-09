@@ -1,6 +1,7 @@
 // NPC state and info
 
 import ChatConst;
+import SkillConst;
 import infos.AdventureInfo;
 
 class NPC
@@ -151,21 +152,19 @@ class NPC
           var res = game.player.roll('psychology');
           if (res == ROLL_SUCCESS || res == ROLL_CRIT)
             {
-              var rnd = [
+              printRandom([
                 'You appraise the emotional state of ' + name + '.',
                 'You expertly assess the mood of ' + name + '.',
-              ];
-              print(rnd[Std.random(rnd.length)]);
+              ]);
               evalTimer += 4;
             }
           else
             {
-              var rnd = [
+              printRandom([
                 'You cannot quite grasp what ' + name + ' is thinking.',
                 'It is hard to figure out what ' + name + ' is all about.',
                 'It looks like interpreting the mood of ' + name + ' is beyond your capabilities.',
-              ];
-              print(rnd[Std.random(rnd.length)]);
+              ]);
             }
           ret = 1;
         }
@@ -254,7 +253,7 @@ class NPC
             }
 
           // find skill by name
-          var skill = SkillConst.getByName(tokens[0]);
+          var skill = SkillConst.getInfo(tokens[0]);
           if (skill == null)
             {
               print('No such skill found.');
@@ -267,40 +266,7 @@ class NPC
               return -1;
             }
 
-          // check if this skill is available in this chat
-          var chatSkill = chatSkills[skill.id];
-          if (chatSkill == null || !chatSkill.isEnabled)
-            {
-              print('This skill is useless here.');
-              ret = 1;
-            }
-          else
-            {
-              var roll = game.player.roll(skill.id);
-              if (roll == ROLL_CRIT || roll == ROLL_SUCCESS)
-                {
-                  if (chatSkill.print != null)
-                    print(chatSkill.print);
-                  if (chatSkill.say != null)
-                    say(chatSkill.say);
-                  scene.location.handleActionResult(chatSkill.result);
-                }
-              else
-                {
-                  // find hint
-                  for (hint in hints)
-                    if (hint.type == HINT_SKILL && hint.id == skill.id)
-                      {
-                        hint.stage = 4;
-                        updateHintText(hint);
-                        break;
-                      }
-                  if (chatSkill.sayFail != null)
-                    say(chatSkill.sayFail);
-                }
-              disableSkill(chatSkill.id);
-              ret = 1;
-            }
+          return rollCommand(skill, playerSkill);
         }
 
       // no appropriate command found
@@ -769,6 +735,61 @@ class NPC
     }
 
 
+// roll skill command
+  function rollCommand(info: _SkillInfo, playerSkill: Skill): Int
+    {
+      // check if this skill is available in this chat
+      var chatSkill = chatSkills[info.id];
+      if (chatSkill == null || !chatSkill.isEnabled)
+        {
+          print('This skill is useless here.');
+          return 1;
+        }
+
+      // NPC state roll mods
+      var mods = null;
+      if (chatState != NPC_STATE_NORMAL)
+        {
+          var mod = 10;
+          if (chatState == NPC_STATE_CONFUSION)
+            mod = -5;
+          else if (chatState == NPC_STATE_AGREEMENT)
+            mod = 10;
+          else if (chatState == NPC_STATE_ENMITY)
+            mod = -10;
+          mods = [{
+            src: 'NPC state',
+            val: mod
+          }];
+        }
+
+      var roll = game.player.roll(info.id, mods);
+      if (roll == ROLL_CRIT || roll == ROLL_SUCCESS)
+        {
+          if (chatSkill.print != null)
+            print(chatSkill.print);
+          if (chatSkill.say != null)
+            say(chatSkill.say);
+          scene.location.handleActionResult(chatSkill.result);
+        }
+      else
+        {
+          // find hint
+          for (hint in hints)
+            if (hint.type == HINT_SKILL && hint.id == info.id)
+              {
+                hint.stage = 4;
+                updateHintText(hint);
+                break;
+              }
+          if (chatSkill.sayFail != null)
+            say(chatSkill.sayFail);
+        }
+      disableSkill(chatSkill.id);
+      return 1;
+    }
+
+
 // initialize hints state
   function initHints()
     {
@@ -933,14 +954,14 @@ class NPC
       else if (chatState == NPC_STATE_NORMAL)
         ss.add(nameUpper + ' looks at you expectantly.');
       if (evalTimer > 0 && chatState != NPC_STATE_NORMAL)
-        ss.add(' [' + chatStateTimer + ' turns left]');
+        ss.add(' ' + sysn(chatStateTimer + ' turns left'));
       ss.add('\n');
       if (evalTimer > 0)
         {
           for (e in effects)
             e.print(ss, e);
-          ss.add('[Anxiety: ' + anxiety + '/100, ' +
-            'Rapport: ' + rapport + '/100]\n');
+          ss.add(sys('Anxiety: ' + anxiety + '/100, ' +
+            'Rapport: ' + rapport + '/100'));
         }
 
       // print current mode
@@ -961,7 +982,7 @@ class NPC
       s.add('Mode: ');
       if (chatMode == CHAT_MODE_CAUTIOUS)
         {
-          s.add('Cautious ');
+          s.add('Cautious <span class=consoleSys>');
           if (chatState == NPC_STATE_NORMAL)
             s.add('[L: R+, H: A-]');
           else if (chatState == NPC_STATE_CONFUSION)
@@ -973,7 +994,7 @@ class NPC
         }
       else if (chatMode == CHAT_MODE_INTIMATE)
         {
-          s.add('Intimate ');
+          s.add('Intimate <span class=consoleSys>');
           if (chatState == NPC_STATE_NORMAL)
             s.add('[L: R+ A-, H: R- A+]');
           else if (chatState == NPC_STATE_CONFUSION)
@@ -985,7 +1006,7 @@ class NPC
         }
       else if (chatMode == CHAT_MODE_AGGRESSIVE)
         {
-          s.add('Aggressive ');
+          s.add('Aggressive <span class=consoleSys>');
           if (chatState == NPC_STATE_NORMAL)
             s.add('[L: A+ %%Conf %Agree, H: A+ %%Conf %Enmity]');
           else if (chatState == NPC_STATE_CONFUSION)
@@ -995,7 +1016,7 @@ class NPC
           else if (chatState == NPC_STATE_AGREEMENT)
             s.add('[L: R+++ %Conf, H: A--- %Conf %Enmity]');
         }
-      s.add('\n');
+      s.add('</span>\n');
     }
 
 
@@ -1065,10 +1086,10 @@ class NPC
 
 
 // NPC says something
-  inline function say(s: String, ?pts: String)
+  inline function say(s: String, ?sysText: String)
     {
       game.console.print('*"' + s + '"*' +
-        (pts != null ? ' ' + pts : ''));
+        (sysText != null ? ' ' + sys(sysText) : ''));
     }
 
 
@@ -1085,6 +1106,27 @@ class NPC
       if (s.charAt(0) == '"')
         game.console.print('*' + s + '*');
       else game.console.print(s);
+    }
+
+
+// print one of given strings
+  inline function printRandom(lines: Array<String>)
+    {
+      print(lines[Std.random(lines.length)]);
+    }
+
+
+// returns given string bracketed with no newline
+  inline function sysn(s: String): String
+    {
+      return '<span class=consoleSys>[' + s + ']</span>';
+    }
+
+
+// returns given string bracketed with newline
+  inline function sys(s: String): String
+    {
+      return '<span class=consoleSys>[' + s + ']</span>\n';
     }
 
 

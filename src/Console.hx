@@ -280,7 +280,7 @@ class Console
         {
           var id = tokens[1];
           var val = Std.parseInt(tokens[2]);
-          var skill = SkillConst.getByName(id);
+          var skill = SkillConst.getInfo(id);
           if (skill == null)
             {
               system('No such skill.');

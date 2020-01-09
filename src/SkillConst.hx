@@ -160,7 +160,7 @@ Track 10%
 
 
 // find skill by name
-  public static function getByName(name: String): _SkillInfo
+  public static function getInfo(name: String): _SkillInfo
     {
       for (info in infos)
         if (Lambda.has(info.names, name))
