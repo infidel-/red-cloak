@@ -32,12 +32,18 @@ class Game
       console = new Console(this);
 
       // temp character
+/*
       player.skills['psychology'].val += (3 + Std.random(3)) * 10;
       player.skills['fastTalk'].val += 40;
       player.skills['persuade'].val += 30;
+*/
+      player.skills['spotHidden'].val += 30;
+      player.skills['psychology'].val = 65;
+      player.skills['fastTalk'].val = 65;
+      player.skills['persuade'].val = 65;
 
       // temp start
-      console.print('### Welcome to CthulhuRPG DEMO.');
+      console.print('### Welcome to Red Cloak DEMO.');
       console.print("<span style='color:#50f0d0'>*Both the mask and the magician are missing and the curator is keen on finding the former. Hopefully, these two events are related. The magician's house might hold some answers.*</span>");
       adventure = new Adventure(this, new infos.AdventureInfo(this));
       scene = new infos.ThorstonHouse(this);
@@ -45,7 +51,7 @@ class Game
       scene.enter();
 
       // DEBUG: auto commands
-      console.runCommand('dbg e');
+//      console.runCommand('dbg e');
       console.runCommand('ring bell');
     }
 

@@ -55,6 +55,7 @@ class ButlerThorston extends NPC
         },
       ];
 
+      examineNote = 'When irritated, the butler can be exploited to gain favor.';
       chatSpecialTopics = [
        'redCloak' => {
           id: 'redCloak',
@@ -74,6 +75,7 @@ class ButlerThorston extends NPC
                     '+20 Rapport');
                   rapport += 20;
                   disableSpecialTopic('redCloak');
+                  setState(NPC_STATE_AGREEMENT);
                 }
             }
         },
@@ -118,6 +120,8 @@ class ButlerThorston extends NPC
       tries--;
 
       // reset state
+//      anxiety = Std.int(anxiety / 2);
+//      rapport = Std.int(rapport / 2);
       anxiety = 0;
       rapport = 0;
       enableSpecialTopic('redCloak');

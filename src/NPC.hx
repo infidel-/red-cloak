@@ -26,6 +26,7 @@ class NPC
 
   // chat-related data
   var isExamined: Bool;
+  var examineNote: String;
   var gender: Bool; // false - male, true - female
   var pronoun: String;
   var chatSkills: Map<String, ChatSkill>;
@@ -57,6 +58,7 @@ class NPC
       chatTopicNotInterested = null;
       hints = null;
       isExamined = false;
+      examineNote = null;
     }
 
 
@@ -156,7 +158,7 @@ class NPC
                 'You appraise the emotional state of ' + name + '.',
                 'You expertly assess the mood of ' + name + '.',
               ]);
-              evalTimer += 4;
+              evalTimer += (res == ROLL_SUCCESS ? 4 : 7);
             }
           else
             {
@@ -175,6 +177,8 @@ class NPC
           if (isExamined)
             {
               print('You have already examined ' + name + '.');
+              if (examineNote != null)
+                print(examineNote);
               return 1;
             }
 
@@ -183,6 +187,8 @@ class NPC
             {
               isExamined = true;
               print('You furtively examine ' + name + ' looking for clues on conversation topics.');
+              if (examineNote != null)
+                print(examineNote);
             }
           else print('You have failed to discover much about conversation topics with the ' + name + '.');
 
@@ -266,7 +272,7 @@ class NPC
               return -1;
             }
 
-          return rollCommand(skill, playerSkill);
+          ret = rollCommand(skill, playerSkill);
         }
 
       // no appropriate command found
@@ -659,6 +665,21 @@ class NPC
     }
 
 
+// set chat state with message
+  function setState(st: ChatState)
+    {
+      if (chatState == st)
+        return;
+      chatState = NPC_STATE_AGREEMENT;
+      if (chatState == NPC_STATE_CONFUSION)
+        print('You have managed to confuse ' + name + '.');
+      else if (chatState == NPC_STATE_ENMITY)
+        print('You have succeeded in making ' + name + ' annoyed.');
+      else if (chatState == NPC_STATE_AGREEMENT)
+        print(nameUpper + ' completely agrees with you now.');
+    }
+
+
 // handle special topic discussion
   function discussSpecialCommand(info: _ChatSpecialTopicInfo): Int
     {
@@ -917,13 +938,27 @@ class NPC
 
       // update text
       var text = [];
+      var firstLetterKnown = false;
+      var lastLetterKnown = false;
       for (idx in hint.knownLetters)
-        text[idx] = hint.fullText.charAt(idx);
+        {
+          text[idx] = hint.fullText.charAt(idx);
+          if (idx == 0)
+            firstLetterKnown = true;
+          if (idx == hint.fullText.length - 1)
+            lastLetterKnown = true;
+        }
       for (i in 0...text.length)
         if (text[i] == null)
           text[i] = '?';
+      if (!firstLetterKnown)
+        {
+          while (text[0] == '?')
+            text.shift();
+          text.unshift('+');
+        }
       hint.text = text.join('');
-      if (hint.text.length < hint.fullText.length)
+      if (!lastLetterKnown)
         hint.text += '+';
 //      print('' + hint);
     }
@@ -961,7 +996,8 @@ class NPC
           for (e in effects)
             e.print(ss, e);
           ss.add(sys('Anxiety: ' + anxiety + '/100, ' +
-            'Rapport: ' + rapport + '/100'));
+            'Rapport: ' + rapport + '/100, ' +
+            'Eval timer: ' + evalTimer + ' turns left'));
         }
 
       // print current mode
@@ -1137,6 +1173,8 @@ class NPC
     }
   function set_anxiety(v: Int)
     {
+      if (v == _anxiety)
+        return v;
       if (v < 0)
         v = 0;
       if (v > 100)
@@ -1164,6 +1202,8 @@ class NPC
 // enable skill
   inline function enableSkill(id: String)
     {
+      if (chatSkills[id].isEnabled)
+        return;
       game.console.debug('enabled ' + id);
       chatSkills[id].isEnabled = true;
     }
@@ -1172,6 +1212,8 @@ class NPC
 // disable skill
   inline function disableSkill(id: String)
     {
+      if (!chatSkills[id].isEnabled)
+        return;
       game.console.debug('disabled ' + id);
       chatSkills[id].isEnabled = false;
     }
@@ -1180,6 +1222,8 @@ class NPC
 // enable special topic
   inline function enableSpecialTopic(id: String)
     {
+      if (chatSpecialTopics[id].isEnabled)
+        return;
       game.console.debug('enabled ' + id);
       chatSpecialTopics[id].isEnabled = true;
     }
@@ -1188,6 +1232,8 @@ class NPC
 // disable special topic
   inline function disableSpecialTopic(id: String)
     {
+      if (!chatSpecialTopics[id].isEnabled)
+        return;
       game.console.debug('disabled ' + id);
       chatSpecialTopics[id].isEnabled = false;
     }
@@ -1200,6 +1246,8 @@ class NPC
     }
   function set_rapport(v: Int)
     {
+      if (v == _rapport)
+        return v;
       if (v < 0)
         v = 0;
       if (v > 100)
