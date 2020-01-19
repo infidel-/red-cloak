@@ -48,7 +48,10 @@
       if (action == null)
         return 0;
 
-      game.console.print(action.note);
+      if (action.note != null)
+        game.console.print(action.note);
+      if (action.func != null)
+        action.func(obj);
       if (action.result != null)
         return handleActionResult(action.result);
 

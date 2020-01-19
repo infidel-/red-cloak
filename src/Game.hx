@@ -7,6 +7,7 @@ class Game
   public var player: Player;
   public var debug: {
     var evaluate: Bool;
+    var failRoll: Bool;
   }
   public var state(get, set): _GameState;
   var _state: _GameState;
@@ -17,6 +18,7 @@ class Game
       npc = null;
       debug = {
         evaluate: false,
+        failRoll: false,
       };
       player = new Player(this, {
         str: Const.dice(3,6),
@@ -52,7 +54,8 @@ class Game
 
       // DEBUG: auto commands
 //      console.runCommand('dbg e');
-      console.runCommand('ring bell');
+//      console.runCommand('ring bell');
+      scene.moveTo('workshop');
     }
 
 

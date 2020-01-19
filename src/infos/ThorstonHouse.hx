@@ -8,6 +8,8 @@ class ThorstonHouse extends Scene
     {
       super(g);
 
+      cluesTotal = 3;
+
       // =locations
       locations = [
         {
@@ -18,7 +20,6 @@ class ThorstonHouse extends Scene
           objects: [
             {
               id: 'bell',
-              isKnown: true,
               names: [ 'bell', 'button' ],
               locationNote: 'There is an electric door bell near the gates here.',
               note: 'This is a button for an electric door bell.',
@@ -35,7 +36,6 @@ class ThorstonHouse extends Scene
             },
             {
               id: 'fence',
-              isKnown: true,
               note: 'The wrought iron fence is significantly taller than you are.',
               names: [ 'wall', 'fence' ],
               actions: [
@@ -47,7 +47,6 @@ class ThorstonHouse extends Scene
             },
             {
               id: 'gates',
-              isKnown: true,
               note: 'The gates are tall and imposing.',
               names: [ 'gates', 'gate' ],
               actions: [
@@ -66,9 +65,65 @@ class ThorstonHouse extends Scene
         {
           id: 'firstFloor',
           game: game,
-          name: 'First floor corridor.',
-          note: 'You are in the corridor at the first floor. There are a couple doors here.',
+          name: 'First floor corridor',
+          note: 'You are in the corridor at the first floor. There are a couple of doors here.',
           objects: [],
+        },
+        {
+          id: 'workshop',
+          game: game,
+          name: 'Workshop',
+          note: 'This large room is filled to the brim with magician paraphernalia. A working desk near the window, a makeup table with a mirror in the corner next to a wardrobe, large chests, copious amounts of stage clothing, small cages supposedly for rabbits, all that could swallow a whole party of investigators.',
+          objects: [
+            {
+              id: 'diary',
+              names: [ 'diary', 'book' ],
+              locationNote: 'A leather bound diary is lying on the desk.',
+              actions: [
+                {
+                  names: [ 'read', 'x' ],
+                  func: function(o: ObjectInfo)
+                    {
+                      if (o.state < 3)
+                        o.state++;
+                      if (o.state == 1)
+                        print('Thorston\'s diary describes his life that is full of public events and performances. (more)');
+                      else if (o.state == 2)
+                        print('Last entry is dated two weeks ago. (more)');
+                      else if (o.state == 3)
+                        {
+                          var res = game.player.roll('idea');
+                          if (res == ROLL_FAIL || res == ROLL_FUMBLE)
+                            {
+                              printFail('idea');
+                              game.adventure.failClue('thorstonDiary');
+                            }
+                          else
+                            {
+                              print('Thorston has regularly written in his diary, it is strange that he stopped writing so abruptly.');
+                              game.adventure.gainClue('thorstonDiary');
+                            }
+                          o.state = 4;
+
+                        }
+                      else if (o.state == 4)
+                        print('You are done with the diary.');
+                    }
+                }
+              ]
+            },
+            {
+              id: 'odor',
+              names: [ 'smell', 'odor' ],
+              locationNote: 'You notice a faint pungent odor pervading the room.',
+            },
+            {
+              id: 'paper',
+              names: [ 'paper' ],
+              locationNote: 'There is a small piece of paper tucked into the corner of a mirror.',
+            },
+            // TODO: wardrobe, mirror, smudge, chest(s), clothing, cage, window, table
+          ],
         }
       ];
       startingLocation = locations[0];

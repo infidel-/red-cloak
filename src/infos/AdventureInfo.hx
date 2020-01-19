@@ -13,6 +13,7 @@ class AdventureInfo
     var isKnown: Bool;
   }>;
   public var topics: Array<_ChatSpecialTopicInfo>;
+  public var clues: Map<String, String>;
 
   public function new(g: Game)
     {
@@ -60,6 +61,11 @@ class AdventureInfo
           isKnown: true,
         },
         topicThorston,
+      ];
+
+      // clues
+      clues = [
+        'thorstonDiary' => 'Thorston has stopped writing in his diary two weeks ago.',
       ];
     }
 }

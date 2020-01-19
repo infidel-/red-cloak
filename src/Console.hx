@@ -98,6 +98,13 @@ class Console
             return runCommand(command);
         }
 
+      // list clues
+      else if (cmd == 'clues')
+        {
+          game.adventure.printKnownClues();
+          return 1;
+        }
+
 #if mydebug
       else if (cmd == 'debug' || cmd == 'dbg')
         return runDebugCommand(tokens);
@@ -209,7 +216,14 @@ class Console
               return -1;
             }
 
-          print(obj.note);
+          // examine note
+          if (obj.note != null)
+            print(obj.note);
+
+          // examine action with function attached
+          // replace examine/x/look/l with single command
+          else return game.scene.location.runCommand('x', tokens);
+
           return 1;
         }
 
@@ -229,6 +243,7 @@ class Console
           system('Debug commands:\n' +
             'anxiety (a) - set anxiety in chat\n' +
             'eval (e) - toggle always on evaluate timer\n' +
+            'fail (f) - fail next roll\n' +
             'rapport (r) - set rapport in chat\n' +
             'skill (sk) [id/name] [val] - set skill value'
           );
@@ -259,6 +274,16 @@ class Console
 
           return 1;
         }
+
+      // auto-fail next roll
+      else if (cmd == 'fail' || cmd == 'f')
+        {
+          game.debug.failRoll = true;
+          system('[Next roll will fail]');
+
+          return 1;
+        }
+
 
       // set chat rapport
       else if (cmd == 'rapport' || cmd == 'r')
@@ -335,6 +360,7 @@ class Console
 
   static var commandHelp = [
     'again' => 'again, g - Repeats previous command again.',
+    'clues' => 'clues - Lists known clues and scene clue counters.',
     'examine' => 'examine, x, look, l <object> - Examines the given object.',
     'look' => 'examine, x, look, l <object> - Examines the given object.',
     'roll' => 'roll, r <skill> - Makes a roll for a given skill.',

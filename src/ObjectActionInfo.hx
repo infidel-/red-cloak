@@ -2,6 +2,7 @@
 
 typedef ObjectActionInfo = {
   var names: Array<String>;
-  var note: String;
+  @:optional var note: String;
   @:optional var result: ActionResultInfo;
+  @:optional var func: ObjectInfo -> Void;
 }

@@ -14,6 +14,13 @@ class Const
   ];
 
 
+  public static var stringsFail: Map<String, Array<String>> = [
+    'idea' => [
+      'Apparently, you have no clue about it.',
+      'You have no idea why that is important.',
+    ],
+  ];
+
 // trace call stack for debug
   public static inline function traceStack()
     {

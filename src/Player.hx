@@ -55,6 +55,12 @@ class Player
         }
 
       var roll = 1 + Std.random(100);
+      // DEBUG: fail roll
+      if (game.debug.failRoll)
+        {
+          roll = 99;
+          game.debug.failRoll = false;
+        }
       var success = (roll <= value);
       var str = '';
       var res: _RollResult = null;

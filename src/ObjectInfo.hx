@@ -2,9 +2,10 @@
 
 typedef ObjectInfo = {
   var id: String;
+  @:optional var state: Int; // generic object state counter (default 0)
   var names: Array<String>;
   @:optional var locationNote: String;
-  var note: String;
+  @:optional var note: String;
   @:optional var actions: Array<ObjectActionInfo>;
-  var isKnown: Bool;
+  @:optional var isEnabled: Bool;
 }
