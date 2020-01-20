@@ -5,6 +5,8 @@ class Player
   var game: Game;
   public var skills: Map<String, Skill>;
   public var stats: Stats;
+  public var hp: Int;
+  public var maxHP: Int;
 
   public function new(g: Game, s: Stats)
     {
@@ -21,6 +23,8 @@ class Player
       skills['knowledge'].val = stats.edu * 5;
       skills['willpower'].val = stats.pow * 5;
       skills['charisma'].val = stats.cha * 5;
+      maxHP = Math.round((stats.str + stats.con) / 2.0);
+      hp = maxHP;
     }
 
 

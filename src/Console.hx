@@ -209,7 +209,7 @@ class Console
             }
 
           // find referenced object
-          var obj = game.scene.getObject(tokens[0]);
+          var obj = game.scene.getEnabledObject(tokens[0]);
           if (obj == null)
             {
               system("I did not understand what that referred to.");
@@ -348,6 +348,20 @@ class Console
   public inline function system(s: String)
     {
       _console.print('<span class=consoleSys>' + s + '</span>');
+    }
+
+
+  public inline function printFail(id: String)
+    {
+      print(
+        Const.stringsFail[id][Std.random(Const.stringsFail[id].length)]);
+    }
+
+
+  public inline function printString(id: String)
+    {
+      print(
+        Const.stringsFail[id][Std.random(Const.strings[id].length)]);
     }
 
 

@@ -6,13 +6,13 @@
   public var game: Game;
   public var name: String;
   public var note: String;
-  public var objects: Array<ObjectInfo>;
+  public var objects: Map<String, ObjectInfo>;
 
   public function new(id: String,
       game: Game,
       name: String,
       note: String,
-      objects: Array<ObjectInfo>)
+      objects: Map<String, ObjectInfo>)
     {
       this.id = id;
       this.game = game;
@@ -32,22 +32,51 @@
       if (tokens.length < 1)
         return 0;
 
-      // find object with this name
-      var obj = game.scene.getObject(tokens[0]);
-      if (obj == null || obj.actions == null)
-        return 0;
-      
-      // check if this object has this action
+      // roll X on Y
+      var obj = null;
       var action = null;
-      for (a in obj.actions)
-        if (Lambda.has(a.names, cmd))
-          {
-            action = a;
-            break;
-          }
+      if (cmd == 'roll' || cmd == 'r')
+        {
+          // find skill
+          var skillInfo = SkillConst.getInfo(tokens[0]);
+          if (skillInfo == null)
+            return 0;
+
+          // find enabled object with this name
+          obj = game.scene.getEnabledObject(tokens[1]);
+          if (obj == null || obj.actions == null)
+            return 0;
+
+          // check if this object has this skill attached
+          action = null;
+          for (a in obj.actions)
+            if (a.roll == skillInfo.id)
+              {
+                action = a;
+                break;
+              }
+        }
+      
+      else
+        {
+          // find enabled object with this name
+          obj = game.scene.getEnabledObject(tokens[0]);
+          if (obj == null || obj.actions == null)
+            return 0;
+
+          // check if this object has this action
+          action = null;
+          for (a in obj.actions)
+            if (Lambda.has(a.names, cmd))
+              {
+                action = a;
+                break;
+              }
+        }
+
+      // run action code
       if (action == null)
         return 0;
-
       if (action.note != null)
         game.console.print(action.note);
       if (action.func != null)
@@ -85,8 +114,10 @@
       return 1;
     }
 
+
   public static var commandHelp = [
     'examine' => 'examine, x, look, l <object> - Examines the given object. If no object is given, describes the scene.',
     'look' => 'examine, x, look, l <object> - Examines the given object. If no object is given, describes the scene.',
+    'roll' => 'roll, r <skill> on <object> - Roll a skill on a given object.',
   ];
 }

@@ -14,12 +14,32 @@ class Const
   ];
 
 
+// roll fail strings
   public static var stringsFail: Map<String, Array<String>> = [
     'idea' => [
       'Apparently, you have no clue about it.',
       'You have no idea why that is important.',
     ],
+    'spotHidden' => [
+      'You fail to notice anything special here.',
+      'Nothing catches your eye.',
+      'There is nothing here that attracts your attention.',
+    ],
+    'strength' => [
+      'Your strength fails you.',
+    ],
   ];
+
+
+// common string
+  public static var strings: Map<String, Array<String>> = [
+    'nothingImportant' => [
+      'There is nothing important here.',
+      'You do not see anything important here.',
+    ]
+  ];
+
+// canned strings
 
 // trace call stack for debug
   public static inline function traceStack()

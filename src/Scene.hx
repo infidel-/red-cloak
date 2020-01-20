@@ -75,7 +75,7 @@ class Scene
 
 
 // get object info by its name
-  public function getObject(name: String): ObjectInfo
+  public function getEnabledObject(name: String): ObjectInfo
     {
       for (o in location.objects)
         if (o.isEnabled && Lambda.has(o.names, name))
@@ -123,7 +123,12 @@ class Scene
 
   inline function printFail(id: String)
     {
-      game.console.print(
-        Const.stringsFail[id][Std.random(Const.stringsFail[id].length)]);
+      game.console.printFail(id);
+    }
+
+
+  inline function printString(id: String)
+    {
+      game.console.printString(id);
     }
 }
