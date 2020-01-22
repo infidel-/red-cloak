@@ -7,12 +7,14 @@ class Adventure
   public var game: Game;
   public var info: AdventureInfo;
   var knownClues: Array<String>;
+  var items: Array<String>;
 
   public function new(g: Game, info: AdventureInfo)
     {
       game = g;
       this.info = info;
       this.knownClues = [];
+      this.items = [];
     }
 
 
@@ -106,5 +108,17 @@ class Adventure
       game.console.system('[You have failed to gain a clue.]');
       if (game.state != STATE_MAP)
         game.scene.cluesFailed++;
+    }
+
+
+// gain adventure item
+  public function gainItem(id: String)
+    {
+      if (info.items[id] == null)
+        throw 'No such item: ' + id;
+
+      items.push(id);
+
+      game.console.system('[You have gained an important item.]');
     }
 }

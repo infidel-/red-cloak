@@ -7,6 +7,7 @@ class Player
   public var stats: Stats;
   public var hp: Int;
   public var maxHP: Int;
+  public var maxSan: Int;
 
   public function new(g: Game, s: Stats)
     {
@@ -22,9 +23,11 @@ class Player
       skills['idea'].val = stats.int * 5;
       skills['knowledge'].val = stats.edu * 5;
       skills['willpower'].val = stats.pow * 5;
+      skills['sanity'].val = stats.pow * 5;
       skills['charisma'].val = stats.cha * 5;
       maxHP = Math.round((stats.str + stats.con) / 2.0);
       hp = maxHP;
+      maxSan = skills['sanity'].val;
     }
 
 
@@ -38,7 +41,10 @@ class Player
     {
       var skill = skills[id];
       if (skill == null)
-        throw 'No such skill: ' + id;
+        {
+          game.console.system('No such skill: ' + id);
+          return ROLL_FAIL;
+        }
       if (skill.val == 0)
         return ROLL_ZERO;
 
@@ -92,6 +98,45 @@ class Player
         roll + '/' + valuestr + ', ' + str + ']');
 
       return res;
+    }
+
+
+// roll for sanity
+  public function rollSanity(valSuccess: Int, valFail: Int, ?msg: String = null)
+    {
+      var res = roll('sanity');
+      var val = 0;
+      if (res == ROLL_FAIL || res == ROLL_FUMBLE)
+        val = valFail;
+      else val = valSuccess;
+
+      if (msg != null)
+        game.console.print('<span class=msgSanity>' + msg + '</span>');
+
+      var skill = skills['sanity'];
+      skill.val -= val;
+      if (skill.val < 0)
+        skill.val = 0;
+
+      if (val > 0)
+        game.console.system('[-' + val + ' sanity, ' + skill.val + ' left]');
+
+      if (skill.val == 0)
+        game.finish('loseSanity');
+    }
+
+
+// receive damage
+  public function damage(val: Int)
+    {
+      hp -= val;
+      if (hp < 0)
+        hp = 0;
+
+      game.console.system('[-' + val + ' hit points, ' + hp + ' left]');
+
+      if (hp == 0)
+        game.finish('loseHP');
     }
 }
 

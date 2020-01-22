@@ -11,9 +11,11 @@ class Game
   }
   public var state(get, set): _GameState;
   var _state: _GameState;
+  public var isOver: Bool;
 
   public function new()
     {
+      isOver = false;
       _state = STATE_MAP;
       npc = null;
       debug = {
@@ -56,6 +58,19 @@ class Game
 //      console.runCommand('dbg e');
 //      console.runCommand('ring bell');
       scene.moveTo('workshop');
+//      scene.moveTo('reflection');
+    }
+
+
+// finish game
+  public function finish(res: String)
+    {
+      isOver = true;
+      console.print('GAME OVER');
+      if (res == 'loseSanity')
+        console.print('<span class=msgSanity>The last shred of sanity abandons you leaving behind a broken shell of a human being.</span>');
+      else if (res == 'loseHP')
+        console.print('Weakened from your mortal wounds, you fade away.');
     }
 
 

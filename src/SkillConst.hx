@@ -9,36 +9,49 @@ class SkillConst
       name: 'Library Use',
       names: [ 'library use', 'lib' ],
       val: 25,
+      isFake: false,
     },
     {
       id: 'listen',
       name: 'Listen',
       names: [ 'listen' ],
       val: 25,
+      isFake: false,
     },
     {
       id: 'spotHidden',
       name: 'Spot Hidden',
       names: [ 'spot hidden', 'spot' ],
       val: 25,
+      isFake: false,
     },
     {
       id: 'idea', // int x5
       name: 'Idea',
       names: [ 'idea' ],
       val: 0,
+      isFake: false,
     },
     {
       id: 'knowledge', // edu x5
       name: 'Knowledge',
       names: [ 'knowledge', 'know' ],
       val: 0,
+      isFake: false,
     },
     {
       id: 'willpower', // pow x5
       name: 'Willpower',
       names: [ 'willpower', 'will', 'wp' ],
       val: 0,
+      isFake: false,
+    },
+    {
+      id: 'sanity', // pow x5
+      name: 'Sanity',
+      names: [ 'sanity', 'san' ],
+      val: 0,
+      isFake: true,
     },
 
     // social
@@ -47,30 +60,35 @@ class SkillConst
       name: 'Charisma',
       names: [ 'charisma', 'cha' ],
       val: 0,
+      isFake: false,
     },
     {
       id: 'credit',
       name: 'Credit Rating',
       names: [ 'credit rating', 'credit' ],
       val: 15,
+      isFake: false,
     },
     {
       id: 'fastTalk',
       name: 'Fast Talk',
       names: [ 'fast talk', 'talk', 'fast' ],
       val: 5,
+      isFake: false,
     },
     {
       id: 'persuade',
       name: 'Persuade',
       names: [ 'persuade', 'per' ],
       val: 15,
+      isFake: false,
     },
     {
       id: 'psychology',
       name: 'Psychology',
       names: [ 'psychology', 'psy' ],
       val: 5,
+      isFake: false,
     },
 
     {
@@ -78,6 +96,16 @@ class SkillConst
       name: 'Strength',
       names: [ 'strength', 'str' ],
       val: 0,
+      isFake: false,
+    },
+    
+    // combat
+    {
+      id: 'fist',
+      name: 'Fist/Punch',
+      names: [ 'fist', 'punch' ],
+      val: 50,
+      isFake: false,
     },
 
     // academia and misc
@@ -86,11 +114,18 @@ class SkillConst
       name: 'Law',
       names: [ 'law' ],
       val: 5,
+      isFake: false,
+    },
+    {
+      id: 'chemistry',
+      name: 'Chemistry',
+      names: [ 'chemistry', 'chem' ],
+      val: 0,
+      isFake: false,
     },
 /*
 Combat:
 Dodge DEX ×2%
-Fist/Punch 50%
 Head Butt 10%
 Ranged Weapon (spec.) {varies}
 Kick 25%
@@ -112,7 +147,6 @@ Anthropology 0%
 Archaeology 0%
 Astronomy 0%
 Biology 0%
-Chemistry 0%
 Geology 0%
 History 20%
 Natural History 10%
@@ -175,7 +209,8 @@ Track 10%
       var sb = new StringBuf();
       sb.add('Skills: ');
       for (skill in game.player.skills)
-        sb.add(skill.info.name + ' (' + skill.val + '%), ');
+        if (!skill.info.isFake)
+          sb.add(skill.info.name + ' (' + skill.val + '%), ');
       var s = sb.toString();
       s = s.substr(0, s.length - 2);
       s += '</span>';
@@ -188,4 +223,5 @@ typedef _SkillInfo = {
   public var name: String;
   public var names: Array<String>;
   public var val: Int;
+  public var isFake: Bool;
 }

@@ -16,17 +16,24 @@ class Const
 
 // roll fail strings
   public static var stringsFail: Map<String, Array<String>> = [
+    'chemistry' => [
+      'You have failed to correctly use your knowledge of chemistry.',
+      'It seems that this time basic chemistry is beyond your ability.',
+    ],
     'idea' => [
       'Apparently, you have no clue about it.',
       'You have no idea why that is important.',
     ],
     'spotHidden' => [
-      'You fail to notice anything special here.',
+      'You fail to notice anything special.',
       'Nothing catches your eye.',
-      'There is nothing here that attracts your attention.',
+      'There is nothing that attracts your attention.',
     ],
     'strength' => [
       'Your strength fails you.',
+    ],
+    'willpower' => [
+      'The power of your will is not high enough.',
     ],
   ];
 

@@ -6,21 +6,41 @@
   public var game: Game;
   public var name: String;
   public var note: String;
+  public var actions: Array<LocationActionInfo>;
   public var objects: Map<String, ObjectInfo>;
 
   public function new(id: String,
       game: Game,
       name: String,
       note: String,
+      actions: Array<LocationActionInfo>,
       objects: Map<String, ObjectInfo>)
     {
       this.id = id;
       this.game = game;
       this.name = name;
       this.note = note;
+      this.actions = actions;
       this.objects = objects;
     }
 
+
+// runs a special location command if found
+// 0 - no such command
+// 1 - command found
+  public function runSpecialCommand(cmd: String): Int
+    {
+      // special location commands check
+      for (a in actions)
+        if (Lambda.has(a.names, cmd))
+          {
+            if (a.func != null)
+              a.func();
+            return 1;
+          }
+
+      return 0;
+    }
 
 // runs a console command on this location
 // 0 - error, show standard error message
@@ -39,8 +59,15 @@
         {
           // find skill
           var skillInfo = SkillConst.getInfo(tokens[0]);
-          if (skillInfo == null)
+          if (skillInfo == null || skillInfo.isFake)
             return 0;
+
+          var skill = game.player.skills[skillInfo.id];
+          if (skill.val == 0)
+            {
+              game.console.print('You do not have that skill.');
+              return -1;
+            }
 
           // find enabled object with this name
           obj = game.scene.getEnabledObject(tokens[1]);
@@ -77,6 +104,18 @@
       // run action code
       if (action == null)
         return 0;
+
+      // re-check for associated skill
+      if (action.roll != null)
+        {
+          var skill = game.player.skills[action.roll];
+          if (skill.val == 0)
+            {
+              game.console.print('You do not have that skill.');
+              return -1;
+            }
+        }
+
       if (action.note != null)
         game.console.print(action.note);
       if (action.func != null)

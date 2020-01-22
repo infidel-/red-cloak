@@ -4,11 +4,13 @@ class Console
 {
   var game: Game;
   var _console: _Console;
+  public var lastCommand: String;
 
   public function new(g: Game)
     {
       game = g;
       _console = new _Console(game);
+      lastCommand = '';
     }
 
 
@@ -29,6 +31,7 @@ class Console
           tokensFull.push(x.toLowerCase());
         }
 //      trace(tokens);
+      lastCommand = tokensFull.join(' ');
 
       var cmd = tokens.shift();
       tokensFull.shift();
@@ -37,6 +40,11 @@ class Console
       var ret = runCommandCommon(cmd, tokens);
       if (ret != 0)
         return ret;
+      if (game.isOver)
+        {
+          print('Game over, please start a new one.');
+          return -1;
+        }
 
       // state-specific commands
       if (game.state == STATE_LOCATION)
@@ -122,10 +130,13 @@ class Console
             'INT ' + stats.int + ', ' +
             'POW ' + stats.pow + ', ' +
             'CHA ' + stats.cha + ', ' +
-            'EDU ' + stats.edu + '\n');
+            'EDU ' + stats.edu + ' | ' +
+            'HP ' + game.player.hp + '/' + game.player.maxHP + ', ' +
+            'SAN ' + game.player.skills['sanity'].val + '\n');
           sb.add('Skills: ');
           for (skill in game.player.skills)
-            sb.add(skill.info.name + ' (' + skill.val + '%), ');
+            if (skill.val > 0 && !skill.info.isFake)
+              sb.add(skill.info.name + ' (' + skill.val + '%), ');
           var s = sb.toString();
           s = s.substr(0, s.length - 2);
           s += '</span>';
@@ -198,6 +209,11 @@ class Console
 // location commands
   function runCommandLocation(cmd: String, tokens: Array<String>): Int
     {
+      // check for special location commands
+      var ret = game.scene.location.runSpecialCommand(lastCommand);
+      if (ret == 1)
+        return ret;
+
       // look/examine
       if (Lambda.has([ 'look', 'l', 'examine', 'x' ], cmd))
         {
@@ -243,6 +259,7 @@ class Console
           system('Debug commands:\n' +
             'anxiety (a) - set anxiety in chat\n' +
             'eval (e) - toggle always on evaluate timer\n' +
+            'hp [val] - set player hp\n' +
             'fail (f) - fail next roll\n' +
             'rapport (r) - set rapport in chat\n' +
             'skill (sk) [id/name] [val] - set skill value'
@@ -284,6 +301,15 @@ class Console
           return 1;
         }
 
+      // hp <val> - set hp value
+      else if (cmd == 'hp')
+        {
+          var val = Std.parseInt(tokens[1]);
+          game.player.hp = val;
+          system('[hp set to ' + val + '.]');
+
+          return 1;
+        }
 
       // set chat rapport
       else if (cmd == 'rapport' || cmd == 'r')

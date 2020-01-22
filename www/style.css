@@ -40,6 +40,10 @@ p {
   color: #aa3333;
 }
 
+.msgSanity {
+  color: #a65cff;
+}
+
 .consoleDebug {
   font-family: monospace,monospace;
   font-size: 70%;

@@ -47,6 +47,9 @@ class Scene
 // move to location by id
   public function moveTo(id: String)
     {
+      if (game.isOver)
+        return;
+
       for (l in locations)
         if (l.id == id)
           {
